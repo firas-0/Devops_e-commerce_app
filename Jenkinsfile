@@ -1,46 +1,53 @@
 pipeline {
   agent any
-  tools {
-    jdk 'jdk17'
-    maven 'Maven-3.9'
-  }
-  options { timestamps() }
 
-  triggers {
-    pollSCM('@daily')   // en secours si le webhook échoue
+  tools {
+    jdk 'JDK-17'        // ou 'JDK-21' si tu as nommé l’outil ainsi dans Jenkins
   }
+
+  options { timestamps() }
 
   stages {
     stage('Checkout') {
-      steps {
-        checkout scm
-      }
+      steps { checkout scm }
     }
 
-    stage('Build') {
+    stage('Build & Test') {
       steps {
-        sh 'mvn -B -DskipTests=false clean package'
+        dir('e-commerce-backend') {
+          sh 'chmod +x mvnw || true'
+          sh './mvnw -B clean verify'
+        }
       }
       post {
         always {
-          junit '**/target/surefire-reports/*.xml'
-          archiveArtifacts artifacts: 'target/*.war, target/*.jar', fingerprint: true
+          // Ne pas rater le build si pas (encore) de tests
+          junit testResults: 'e-commerce-backend/**/surefire-reports/*.xml, e-commerce-backend/**/failsafe-reports/*.xml',
+               allowEmptyResults: true
+        }
+      }
+    }
+
+    stage('Package') {
+      steps {
+        dir('e-commerce-backend') {
+          sh './mvnw -B -DskipTests package'
+        }
+      }
+      post {
+        success {
+          archiveArtifacts artifacts: 'e-commerce-backend/target/*.jar', fingerprint: true
         }
       }
     }
 
     stage('SonarQube Analysis') {
-      environment {
-        SONAR_TOKEN = credentials('sonar-token')
-      }
+      when { expression { return env.SONAR_HOST_URL != null } }
       steps {
         withSonarQubeEnv('My-SonarQube') {
-          sh '''
-            mvn -B sonar:sonar \
-              -Dsonar.projectKey=<ton-project-key> \
-              -Dsonar.host.url=<http://sonar-host:9000> \
-              -Dsonar.login=$SONAR_TOKEN
-          '''
+          dir('e-commerce-backend') {
+            sh './mvnw -B sonar:sonar'
+          }
         }
       }
     }
