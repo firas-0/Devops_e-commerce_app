@@ -42,11 +42,17 @@ pipeline {
     }
 
     stage('SonarQube Analysis') {
-      when { expression { return env.SONAR_HOST_URL != null } }
       steps {
-        withSonarQubeEnv('My-SonarQube') {
-          dir('e-commerce-backend') {
-            sh './mvnw -B sonar:sonar'
+        withSonarQubeEnv('My-SonarQube') { // ← même nom que dans Jenkins
+          dir('e-commerce-backend') {      // ← là où se trouve le pom.xml
+            sh '''
+              ./mvnw -B \
+                -DskipTests=false \
+                sonar:sonar \
+                -Dsonar.projectKey=ecommerce-backend \
+                -Dsonar.projectName=ecommerce-backend \
+                -Dsonar.host.url=$SONAR_HOST_URL
+            '''
           }
         }
       }
