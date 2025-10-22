@@ -1,14 +1,20 @@
-# Stage 1: Build Spring Boot app
-FROM maven:3.9.6-eclipse-temurin-21 AS build
-WORKDIR /app
-COPY pom.xml .
-COPY src ./src
-RUN mvn clean package -DskipTests
+# Use a full JDK (Debian-based) to avoid cgroup issues
+FROM eclipse-temurin:17-jdk-jammy
 
-# Stage 2: Run the JAR
-FROM eclipse-temurin:21-jdk
 WORKDIR /app
-COPY --from=build /app/target/*.jar app.jar
+
+# Copy the built jar from target
+COPY target/*.jar app.jar
+
+# Expose port
 EXPOSE 8080
+
+# Disable Micrometer system metrics to prevent cgroup errors
+ENV MANAGEMENT_METRICS_ENABLE_PROCESS=false
+ENV MANAGEMENT_METRICS_ENABLE_SYSTEM_CPU=false
+ENV MANAGEMENT_METRICS_ENABLE_SYSTEM_FILES=false
+ENV MANAGEMENT_METRICS_ENABLE_SYSTEM_MEMORY=false
+
+# Run the application
 ENTRYPOINT ["java", "-jar", "app.jar"]
 
