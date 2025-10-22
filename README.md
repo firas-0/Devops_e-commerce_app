@@ -1,4 +1,4 @@
-### **e-commerce-fullstack_springboot_angular_aws**  
+### **DevOps_ec-commerce_app**  
 🚀 Full-stack e-commerce application built with Spring Boot, Angular, Spring Security 6, JWT, and AWS deployment.  
 
 ---
