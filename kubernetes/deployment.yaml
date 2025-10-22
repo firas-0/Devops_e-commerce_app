@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: e-commerce-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: e-commerce-backend
+  template:
+    metadata:
+      labels:
+        app: e-commerce-backend
+    spec:
+      containers:
+      - name: backend
+        image: e-commerce-backend:latest
+        ports:
+        - containerPort: 8080
+        env:
+        - name: SPRING_APP_JWTSECRET
+          value: "my-super-secret-key"
+        - name: SPRING_PROFILES_ACTIVE
+          value: "prod"
+        imagePullPolicy: Never
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: e-commerce-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: e-commerce-frontend
+  template:
+    metadata:
+      labels:
+        app: e-commerce-frontend
+    spec:
+      containers:
+      - name: frontend
+        image: e-commerce-frontend:latest
+        ports:
+        - containerPort: 80
+        imagePullPolicy: Never
+
